@@ -17,6 +17,12 @@ from nltk.corpus import stopwords
 import random
 import re
 
+import os
+import tarfile
+import json
+import numpy as np
+from geopy.geocoders import Nominatim
+
 
 def parse_arguments():
     """
@@ -33,11 +39,25 @@ def parse_arguments():
                         metavar="CLASSIFIER",
                         help="Run sentiment classification test, "
                              "provide trained classifier (pickle file)")
+    parser.add_argument("-run",
+                        metavar="CLASSIFIER",
+                        help="Run sentiment classification on twitter data, "
+                             "provide trained classifier (pickle file)")
+    parser.add_argument("-data",
+                        metavar="CLASSIFIER",
+                        help="Run sentiment classification on twitter data with cleaned data, "
+                             "provide trained classifier (pickle file)")
     args = parser.parse_args()
 
     # test compatibility of parameters
     if args.train and args.test:
         raise RuntimeError("-train and -test can not be called at the same time.")
+    if args.train and args.run:
+        raise RuntimeError("-train and -run can not be called at the same time.")
+    if args.test and args.run:
+        raise RuntimeError("-test and -run can not be called at the same time.")
+    if args.data and not args.run:
+        raise RuntimeError("-data can only be called together with -run.")
     return args
 
 
@@ -113,7 +133,24 @@ def extract_features(file_name, document):
     return features
 
 
+def city_state_country(coord):
+    geolocator = Nominatim(user_agent="geoapiExercises")
+    try:
+        location = geolocator.reverse(coord, exactly_one=True)
+        address = location.raw['address']
+        #city = address.get('city', '')
+        state = address.get('state', '')
+        #country = address.get('country', '')
+        return state
+    except:
+        return 'NULL'
+
+
 def train(file_name):
+    """
+    Train and Test a sentiment classifier using NaiveBayes and sentiment140 data.
+    :param file_name:   string
+    """
     # Loading training dataset
     print("Loading dataset:", end=" ")
     data_set = pd.read_csv("training.1600000.processed.noemoticon.csv",
@@ -140,7 +177,7 @@ def train(file_name):
     # Feature extraction
     print("Feature extraction:", end=" ")
     word_features = get_word_features(get_words_in_tweets(tweets_and_polarity))
-    save_pickle_file(word_features, "word_features_" + file_name)
+    save_pickle_file(word_features, file_name + "_word_features")
     final_data_set = [(extract_features(file_name, tweet), pol_score) for (tweet, pol_score) in tweets_and_polarity]
 
     # Split training and test set
@@ -161,13 +198,82 @@ def train(file_name):
 
 
 def test(file_name):
-    classifier = load_pickle(file_name)
-
+    """
+    Small test sentiment classification example
+    :param file_name:   string, file name of a pickle-file containing a trained classifier
+    """
+    model = load_pickle(file_name)
     # Testing
     tweet_positive = 'I like Larry'
     print(tweet_positive)
-    print(classifier.classify(extract_features(file_name, tweet_positive.split())))
+    print(model.classify(extract_features(file_name, tweet_positive.split())))
 
+
+def classify_tweets(file_name, data_file):
+    if not data_file:
+        # Load Data
+        print("Loading dataset:", end=" ")
+        tar = tarfile.open("geotagged_tweets_20160812-0912.tar")
+        files = tar.getmembers()
+        f = tar.extractfile(files[0])
+        #data = pd.read_json(f, lines=True)
+        # Efficient way of loading json to panda:
+        # https://medium.com/@ram.parameswaran22/a-relatively-faster-approach-for-reading-json-lines-file-into-pandas-dataframe-90b57353fd38
+        lines = f.read().splitlines()
+        df_inter = pd.DataFrame(lines[:10])
+        df_inter.columns = ['json_element']
+        df_inter['json_element'].apply(json.loads)
+        data = pd.json_normalize(df_inter['json_element'].apply(json.loads))
+        print("Done")
+        #print(list(data))  # Column titles
+
+        print("Cleaning dataset:", end=" ")
+        # Only included wanted columns
+        data = data[['id', 'text', 'source', 'place.country_code', 'coordinates',
+                     'lang', 'user.followers_count', 'user.friends_count']]
+        #print('\n', list(data))  # Column titles
+
+        # Exclude tweets outside of US (location) - filter on country code US (Country where tweet is posted)
+        data = data[data['place.country_code'] == "US"]
+        data = data[data['lang'] == 'en']
+
+        # Get states
+        #data['coordinates'] = data['place.longitude'].astype(str) + ", " + data['place.latitude'].astype(str)
+        data['state'] = data['coordinates'].apply(city_state_country)
+
+        # Determine tags and hashs (some tweets dont have tags only hash)
+        data['tags_mention'] = data.text.str.findall(r'(?<![@\w])@(\w{1,25})').apply(','.join)
+        data['hash_mention'] = data.text.str.findall(r"#(\w+)").apply(','.join)
+        data['tags_hash'] = data['hash_mention'] + data['tags_mention']
+        # Lower cases in tags and hashes
+        data['tags_hash'] = data['tags_hash'].apply(lambda x: x.lower())
+
+        # See if either trum or clinton mentioned in hash or tags
+        data['Trump'] = data['tags_hash'].str.contains(r'trump|maga', na=False)
+        data['Clinton'] = data['tags_hash'].str.contains(r'clinton|imwithher|hillary', na=False)
+
+        # Filter bots (hyperlinks in text)
+        # Removing dubious sources:
+        sources = ('<a href="http://twitter.com/download/iphone" rel="nofollow">Twitter for iPhone</a>',
+                   '<a href="http://twitter.com/download/android" rel="nofollow">Twitter for Android</a>',
+                   '<a href="http://twitter.com" rel="nofollow">Twitter Web Client</a>',
+                   '<a href="https://twitter.com/download/android" rel="nofollow">Twitter for Android Tablets</a>',
+                   '<a href="http://twitter.com/#!/download/ipad" rel="nofollow">Twitter for iPad</a>',
+                   '<a href="http://instagram.com" rel="nofollow">Instagram</a>')
+        data = data[data.source.isin(sources)]
+        # Removing people with no friends and no followers
+        data = data[(data['user.followers_count'] > 0) & (data['user.friends_count'] > 0)]
+
+        save_pickle_file(data, file_name + "_twitter_data")
+        print("Done")
+
+    else:
+        print("Loading dataset:", end=" ")
+        data = load_pickle(data_file)
+        print("Done")
+
+    print("Size dataset:", len(data))
+    print("Columns", list(data))  # Column titles
 
 
 if __name__ == "__main__":
@@ -176,5 +282,10 @@ if __name__ == "__main__":
         train(args.train)
     elif args.test:
         test(args.test)
+    elif args.run:
+        if args.data:
+            classify_tweets(args.run, args.data)
+        else:
+            classify_tweets(args.run, None)
     else:
         print("No parameters given. Use '-h' for help.")
