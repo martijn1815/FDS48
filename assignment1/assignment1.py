@@ -108,29 +108,29 @@ def extract_features(file_name, document):
 def train(file_name):
     # Loading training dataset
     print("Loading dataset:", end=" ")
-    training_set = pd.read_csv("training.1600000.processed.noemoticon.csv",
-                               encoding='latin-1',
-                               names=["Polarity", "Tweet ID", "Date", "Query", "User", "Text"])
+    data_set = pd.read_csv("training.1600000.processed.noemoticon.csv",
+                           encoding='latin-1',
+                           names=["Polarity", "Tweet ID", "Date", "Query", "User", "Text"])
     print("Done")
 
     # Pre-Process Data
     print("Pre-Processing data:", end=" ")
 
     # Select random sample - otherwise the classifier will be too slow
-    training_set = training_set.sample(n = 10000)
+    data_set = data_set.sample(n = 10000)
 
-    training_set = training_set[(training_set["Polarity"] == 4) | (training_set["Polarity"] == 0)]  # Filter out Polarity Score equal 0 or 4
-    training_set = clean_data(training_set)  # Data cleaning
+    data_set = data_set[(data_set["Polarity"] == 4) | (data_set["Polarity"] == 0)]  # Filter out Polarity Score equal 0 or 4
+    data_set = clean_data(data_set)  # Data cleaning
 
     # Create data that puts tweet texts together with sentiment score
     stopword_list = stopwords.words('english') # Define stopwords
     tweets_and_polarity_scores = []
-    for i in range(0, len(training_set)):
-        if training_set["Polarity"].iloc[i] == 0 or training_set["Polarity"].iloc[i] == 4:
-            tweet_text = training_set['Text'].iloc[i]
+    for i in range(0, len(data_set)):
+        if data_set["Polarity"].iloc[i] == 0 or data_set["Polarity"].iloc[i] == 4:
+            tweet_text = data_set['Text'].iloc[i]
             tweet_words_in_list = [e.lower() for e in tweet_text.split()]
             tweet_words_in_list_wo_stopwords = [e for e in tweet_words_in_list if not e in stopword_list]
-            tweet_polarity_score = training_set["Polarity"].iloc[i]
+            tweet_polarity_score = data_set["Polarity"].iloc[i]
             tweets_and_polarity_scores.append((tweet_words_in_list_wo_stopwords, tweet_polarity_score))
     print("Done")
 
@@ -138,12 +138,16 @@ def train(file_name):
     print("Feature extraction:", end=" ")
     word_features = get_word_features(get_words_in_tweets(tweets_and_polarity_scores))
     save_pickle_file(word_features, "word_features_" + file_name)
-    final_training_set = [(extract_features(file_name, tweet), pol_score) for (tweet, pol_score) in tweets_and_polarity_scores]
+    final_data_set = [(extract_features(file_name, tweet), pol_score) for (tweet, pol_score) in tweets_and_polarity_scores]
+
+    # Split training and test set
+    training_set = final_data_set[len(final_data_set) / 10:]
+    test_set = final_data_set[:len(final_data_set) / 10]
     print("Done")
 
     # Train and Save Classifier
     print("Training Classifier:", end=" ")
-    classifier = nltk.NaiveBayesClassifier.train(final_training_set)
+    classifier = nltk.NaiveBayesClassifier.train(training_set)
     save_pickle_file(classifier, file_name)
     print("Done")
 
