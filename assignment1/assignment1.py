@@ -62,6 +62,21 @@ def load_pickle(file_name):
     return data
 
 
+def clean_data(data_set):
+    """
+    Data cleaning - removing punctuation from text; removing tags; removing links
+    :param data_set:    a panda data frame
+    :return data_set:
+    """
+    data_set['Text'] = data_set['Text'].str.replace('@[^\s]+', '')
+    data_set['Text'] = data_set['Text'].str.replace('[^\w\s]', '')
+    data_set['Text'] = data_set['Text'].str.replace('\[.*?\]', '')
+    data_set['Text'] = data_set['Text'].str.replace('[‘’“”…]', '')
+    data_set['Text'] = data_set['Text'].str.replace('\w*\d\w*', '')
+
+    return data_set
+
+
 def get_words_in_tweets(tweets):
     all_words= []
     for (words, sentiment) in tweets:
@@ -75,7 +90,14 @@ def get_word_features(wordlist):
     return word_features
 
 
-def extract_features(document):
+def extract_features(file_name, document):
+    """
+    Loads word_features from pickle file and extracts features of given document
+    :param file_name:   string
+    :param document:    string
+    :return features:   dict
+    """
+    word_features = load_pickle("word_features" + file_name)
     document_words = set(document)
     features = {}
     for word in word_features:
@@ -85,44 +107,33 @@ def extract_features(document):
 
 def train(file_name):
     # Loading training dataset
-    training_set = pd.read_csv("trainingandtestdata/training.1600000.processed.noemoticon.csv",
+    training_set = pd.read_csv("training.1600000.processed.noemoticon.csv",
                                encoding='latin-1',
                                names=["Polarity", "Tweet ID", "Date", "Query", "User", "Text"])
-
-    # Define english stopwords
-    stopwords = stopwords.words('english')
-
-    # Filter out Polarity Score equal 0 or 4
-    training_set = training_set[(training_set["Polarity"] == 4) | (training_set["Polarity"] == 0)]
-
-    # Data cleaning - removing punctuation from text; removing tags; removing links
-    training_set['Text'] = training_set['Text'].str.replace('@[^\s]+', '')
-    training_set['Text'] = training_set['Text'].str.replace('[^\w\s]', '')
-    training_set['Text'] = training_set['Text'].str.replace('\[.*?\]', '')
-    training_set['Text'] = training_set['Text'].str.replace('[‘’“”…]', '')
-    training_set['Text'] = training_set['Text'].str.replace('\w*\d\w*', '')
+    training_set = training_set[(training_set["Polarity"] == 4) | (training_set["Polarity"] == 0)]  # Filter out Polarity Score equal 0 or 4
+    training_set = clean_data(training_set)  # Data cleaning
 
     # Create data that puts tweet texts together with sentiment score
+    stopword_list = stopwords.words('english') # Define stopwords
     tweets_and_polarity_scores = []
     for i in range(0, len(training_set)):
         if training_set["Polarity"].iloc[i] == 0 or training_set["Polarity"].iloc[i] == 4:
             tweet_text = training_set['Text'].iloc[i]
             tweet_words_in_list = [e.lower() for e in tweet_text.split()]
-            tweet_words_in_list_wo_stopwords = [e for e in tweet_words_in_list if not e in stopwords]
+            tweet_words_in_list_wo_stopwords = [e for e in tweet_words_in_list if not e in stopword_list]
             tweet_polarity_score = training_set["Polarity"].iloc[i]
             tweets_and_polarity_scores.append((tweet_words_in_list_wo_stopwords, tweet_polarity_score))
-        else:
-            continue
 
     # Select random sample - otherwise the classifier will be too slow
     random_sample = random.sample(tweets_and_polarity_scores, k=10000)
 
+    # Feature extraction
     word_features = get_word_features(get_words_in_tweets(random_sample))
-    final_training_set = nltk.classify.apply_features(extract_features, random_sample)
+    save_pickle_file(word_features, "word_features_" + file_name)
+    final_training_set = [(extract_features(file_name, tweet), pol_score) for (tweet, pol_score) in random_sample]
 
-    # Classifier way too slow atm
+    # Train and Save Classifier
     classifier = nltk.NaiveBayesClassifier.train(final_training_set)
-
     save_pickle_file(classifier, file_name)
 
 
