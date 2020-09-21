@@ -101,7 +101,10 @@ def extract_features(file_name, document):
     document_words = set(document)
     features = {}
     for word in word_features:
-        features["contains(%s)" % word] = (word in document_words)
+        if word in document_words:
+            features[word] = True
+        else:
+            features[word] = False
     return features
 
 
@@ -124,21 +127,23 @@ def train(file_name):
 
     # Create data that puts tweet texts together with sentiment score
     stopword_list = stopwords.words('english') # Define stopwords
-    tweets_and_polarity_scores = []
+    tweets_and_polarity = []
     for i in range(0, len(data_set)):
-        if data_set["Polarity"].iloc[i] == 0 or data_set["Polarity"].iloc[i] == 4:
-            tweet_text = data_set['Text'].iloc[i]
-            tweet_words_in_list = [e.lower() for e in tweet_text.split()]
-            tweet_words_in_list_wo_stopwords = [e for e in tweet_words_in_list if not e in stopword_list]
-            tweet_polarity_score = data_set["Polarity"].iloc[i]
-            tweets_and_polarity_scores.append((tweet_words_in_list_wo_stopwords, tweet_polarity_score))
+        tweet_text = data_set['Text'].iloc[i]
+        tweet_words_in_list = [e.lower() for e in tweet_text.split()]
+        tweet_words_in_list_wo_stopwords = [e for e in tweet_words_in_list if not e in stopword_list]
+        if data_set["Polarity"].iloc[i] == 0:
+            tweet_polarity = "negative"
+        else:
+            tweet_polarity = "positive"
+        tweets_and_polarity.append((tweet_words_in_list_wo_stopwords, tweet_polarity))
     print("Done")
 
     # Feature extraction
     print("Feature extraction:", end=" ")
-    word_features = get_word_features(get_words_in_tweets(tweets_and_polarity_scores))
+    word_features = get_word_features(get_words_in_tweets(tweets_and_polarity))
     save_pickle_file(word_features, "word_features_" + file_name)
-    final_data_set = [(extract_features(file_name, tweet), pol_score) for (tweet, pol_score) in tweets_and_polarity_scores]
+    final_data_set = [(extract_features(file_name, tweet), pol_score) for (tweet, pol_score) in tweets_and_polarity]
 
     # Split training and test set
     training_set = final_data_set[len(final_data_set) / 10:]
@@ -147,9 +152,14 @@ def train(file_name):
 
     # Train and Save Classifier
     print("Training Classifier:", end=" ")
-    classifier = nltk.NaiveBayesClassifier.train(training_set)
-    save_pickle_file(classifier, file_name)
-    print("Done")
+    model = nltk.NaiveBayesClassifier.train(training_set)
+    save_pickle_file(model, file_name)
+    print("Done\n")
+
+    # Test Classifier
+    model.show_most_informative_features()
+    acc = nltk.classify.accuracy(model, test_set)
+    print("\nAccuracy:", acc)
 
 
 def test(file_name):
@@ -157,8 +167,9 @@ def test(file_name):
 
     # Testing
     tweet_positive = 'I like Larry'
-    classifier.classify(extract_features(tweet_positive.split()))
-    classifier.show_most_informative_features(32)
+    print(tweet_positive)
+    print(classifier.classify(extract_features(file_name, tweet_positive.split())))
+
 
 
 if __name__ == "__main__":
