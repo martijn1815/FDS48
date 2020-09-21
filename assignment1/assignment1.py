@@ -68,11 +68,16 @@ def clean_data(data_set):
     :param data_set:    a panda data frame
     :return data_set:
     """
+    stopword_list = stopwords.words('english')  # Define stopwords
+
     data_set['Text'] = data_set['Text'].str.replace('@[^\s]+', '')
     data_set['Text'] = data_set['Text'].str.replace('[^\w\s]', '')
     data_set['Text'] = data_set['Text'].str.replace('\[.*?\]', '')
     data_set['Text'] = data_set['Text'].str.replace('[‘’“”…]', '')
     data_set['Text'] = data_set['Text'].str.replace('\w*\d\w*', '')
+
+    data_set['Text'] = data_set['Text'].str.lower().str.split()  # lower and split the text
+    data_set['Text'] = data_set['Text'].apply(lambda x: [item for item in x if item not in stopword_list])  # remove stopwords
 
     return data_set
 
@@ -122,18 +127,14 @@ def train(file_name):
     data_set = clean_data(data_set)  # Data cleaning
 
     # Create data that puts tweet texts together with sentiment score
-    stopword_list = stopwords.words('english') # Define stopwords
     tweets_and_polarity = []
     for i in range(0, len(data_set)):
         if data_set["Polarity"].iloc[i] == 0 or data_set["Polarity"].iloc[i] == 4:
-            tweet_text = data_set['Text'].iloc[i]
-            tweet_words_in_list = [e.lower() for e in tweet_text.split()]
-            tweet_words_in_list_wo_stopwords = [e for e in tweet_words_in_list if not e in stopword_list]
             if data_set["Polarity"].iloc[i] == 0:
                 tweet_polarity = "negative"
             else:
                 tweet_polarity = "positive"
-            tweets_and_polarity.append((tweet_words_in_list_wo_stopwords, tweet_polarity))
+            tweets_and_polarity.append((data_set['Text'].iloc[i], tweet_polarity))
     print("Done")
 
     # Feature extraction
