@@ -97,7 +97,7 @@ def extract_features(file_name, document):
     :param document:    string
     :return features:   dict
     """
-    word_features = load_pickle("word_features" + file_name)
+    word_features = load_pickle("word_features_" + file_name)
     document_words = set(document)
     features = {}
     for word in word_features:
