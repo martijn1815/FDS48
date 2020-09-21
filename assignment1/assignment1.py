@@ -115,6 +115,10 @@ def train(file_name):
 
     # Pre-Process Data
     print("Pre-Processing data:", end=" ")
+
+    # Select random sample - otherwise the classifier will be too slow
+    training_set = training_set.sample(n = 10000)
+
     training_set = training_set[(training_set["Polarity"] == 4) | (training_set["Polarity"] == 0)]  # Filter out Polarity Score equal 0 or 4
     training_set = clean_data(training_set)  # Data cleaning
 
@@ -128,16 +132,13 @@ def train(file_name):
             tweet_words_in_list_wo_stopwords = [e for e in tweet_words_in_list if not e in stopword_list]
             tweet_polarity_score = training_set["Polarity"].iloc[i]
             tweets_and_polarity_scores.append((tweet_words_in_list_wo_stopwords, tweet_polarity_score))
-
-    # Select random sample - otherwise the classifier will be too slow
-    random_sample = random.sample(tweets_and_polarity_scores, k=10000)
     print("Done")
 
     # Feature extraction
     print("Feature extraction:", end=" ")
-    word_features = get_word_features(get_words_in_tweets(random_sample))
+    word_features = get_word_features(get_words_in_tweets(tweets_and_polarity_scores))
     save_pickle_file(word_features, "word_features_" + file_name)
-    final_training_set = [(extract_features(file_name, tweet), pol_score) for (tweet, pol_score) in random_sample]
+    final_training_set = [(extract_features(file_name, tweet), pol_score) for (tweet, pol_score) in tweets_and_polarity_scores]
     print("Done")
 
     # Train and Save Classifier
