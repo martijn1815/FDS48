@@ -118,25 +118,22 @@ def train(file_name):
 
     # Pre-Process Data
     print("Pre-Processing data:", end=" ")
-
-    # Select random sample - otherwise the classifier will be too slow
-    data_set = data_set.sample(n = 10000)
-
-    data_set = data_set[(data_set["Polarity"] == 4) | (data_set["Polarity"] == 0)]  # Filter out Polarity Score equal 0 or 4
+    data_set = data_set.sample(n = 10000)  # Select random sample - otherwise the classifier will be too slow
     data_set = clean_data(data_set)  # Data cleaning
 
     # Create data that puts tweet texts together with sentiment score
     stopword_list = stopwords.words('english') # Define stopwords
     tweets_and_polarity = []
     for i in range(0, len(data_set)):
-        tweet_text = data_set['Text'].iloc[i]
-        tweet_words_in_list = [e.lower() for e in tweet_text.split()]
-        tweet_words_in_list_wo_stopwords = [e for e in tweet_words_in_list if not e in stopword_list]
-        if data_set["Polarity"].iloc[i] == 0:
-            tweet_polarity = "negative"
-        else:
-            tweet_polarity = "positive"
-        tweets_and_polarity.append((tweet_words_in_list_wo_stopwords, tweet_polarity))
+        if data_set["Polarity"].iloc[i] == 0 or data_set["Polarity"].iloc[i] == 4:
+            tweet_text = data_set['Text'].iloc[i]
+            tweet_words_in_list = [e.lower() for e in tweet_text.split()]
+            tweet_words_in_list_wo_stopwords = [e for e in tweet_words_in_list if not e in stopword_list]
+            if data_set["Polarity"].iloc[i] == 0:
+                tweet_polarity = "negative"
+            else:
+                tweet_polarity = "positive"
+            tweets_and_polarity.append((tweet_words_in_list_wo_stopwords, tweet_polarity))
     print("Done")
 
     # Feature extraction
@@ -146,8 +143,8 @@ def train(file_name):
     final_data_set = [(extract_features(file_name, tweet), pol_score) for (tweet, pol_score) in tweets_and_polarity]
 
     # Split training and test set
-    training_set = final_data_set[len(final_data_set) / 10:]
-    test_set = final_data_set[:len(final_data_set) / 10]
+    training_set = final_data_set[int(len(final_data_set) / 10):]
+    test_set = final_data_set[:int(len(final_data_set) / 10)]
     print("Done")
 
     # Train and Save Classifier
