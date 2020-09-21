@@ -107,9 +107,14 @@ def extract_features(file_name, document):
 
 def train(file_name):
     # Loading training dataset
+    print("Loading dataset:", end=" ")
     training_set = pd.read_csv("training.1600000.processed.noemoticon.csv",
                                encoding='latin-1',
                                names=["Polarity", "Tweet ID", "Date", "Query", "User", "Text"])
+    print("Done")
+
+    # Pre-Process Data
+    print("Pre-Processing data:", end=" ")
     training_set = training_set[(training_set["Polarity"] == 4) | (training_set["Polarity"] == 0)]  # Filter out Polarity Score equal 0 or 4
     training_set = clean_data(training_set)  # Data cleaning
 
@@ -126,15 +131,20 @@ def train(file_name):
 
     # Select random sample - otherwise the classifier will be too slow
     random_sample = random.sample(tweets_and_polarity_scores, k=10000)
+    print("Done")
 
     # Feature extraction
+    print("Feature extraction:", end=" ")
     word_features = get_word_features(get_words_in_tweets(random_sample))
     save_pickle_file(word_features, "word_features_" + file_name)
     final_training_set = [(extract_features(file_name, tweet), pol_score) for (tweet, pol_score) in random_sample]
+    print("Done")
 
     # Train and Save Classifier
+    print("Training Classifier:", end=" ")
     classifier = nltk.NaiveBayesClassifier.train(final_training_set)
     save_pickle_file(classifier, file_name)
+    print("Done")
 
 
 def test(file_name):
