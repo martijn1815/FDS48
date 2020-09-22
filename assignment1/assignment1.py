@@ -90,14 +90,14 @@ def clean_data(data_set):
     """
     stopword_list = stopwords.words('english')  # Define stopwords
 
-    data_set['Text'] = data_set['Text'].str.replace('@[^\s]+', '')
-    data_set['Text'] = data_set['Text'].str.replace('[^\w\s]', '')
-    data_set['Text'] = data_set['Text'].str.replace('\[.*?\]', '')
-    data_set['Text'] = data_set['Text'].str.replace('[‘’“”…]', '')
-    data_set['Text'] = data_set['Text'].str.replace('\w*\d\w*', '')
+    data_set['text'] = data_set['text'].str.replace('@[^\s]+', '')
+    data_set['text'] = data_set['text'].str.replace('[^\w\s]', '')
+    data_set['text'] = data_set['text'].str.replace('\[.*?\]', '')
+    data_set['text'] = data_set['text'].str.replace('[‘’“”…]', '')
+    data_set['text'] = data_set['text'].str.replace('\w*\d\w*', '')
 
-    data_set['Text'] = data_set['Text'].str.lower().str.split()  # lower and split the text
-    data_set['Text'] = data_set['Text'].apply(lambda x: [item for item in x if item not in stopword_list])  # remove stopwords
+    data_set['text'] = data_set['text'].str.lower().str.split()  # lower and split the text
+    data_set['text'] = data_set['text'].apply(lambda x: [item for item in x if item not in stopword_list])  # remove stopwords
 
     return data_set
 
@@ -155,7 +155,7 @@ def train(file_name):
     print("Loading dataset:", end=" ")
     data_set = pd.read_csv("training.1600000.processed.noemoticon.csv",
                            encoding='latin-1',
-                           names=["Polarity", "Tweet ID", "Date", "Query", "User", "Text"])
+                           names=["Polarity", "Tweet ID", "Date", "Query", "User", "text"])
     print("Done")
 
     # Pre-Process Data
@@ -171,7 +171,7 @@ def train(file_name):
                 tweet_polarity = "negative"
             else:
                 tweet_polarity = "positive"
-            tweets_and_polarity.append((data_set['Text'].iloc[i], tweet_polarity))
+            tweets_and_polarity.append((data_set['text'].iloc[i], tweet_polarity))
     print("Done")
 
     # Feature extraction
@@ -273,7 +273,25 @@ def classify_tweets(file_name, data_file):
         print("Done")
 
     print("Size dataset:", len(data))
+    #print("Columns", list(data))  # Column titles
+
+    # Pre-Process Data
+    print("Classifying data:", end=" ")
+    data = clean_data(data)  # Data cleaning
+
+    # Apply classifier to column
+    model = load_pickle(file_name)
+    data['classification_polarity'] = data['text'].apply(lambda x: model.classify((extract_features(file_name, x))))
+
+    print("Done")
     print("Columns", list(data))  # Column titles
+    #print(data.head())
+
+    # Get data per state
+    pos = len(data[data['classification_polarity'] == 'positive'])
+    neg = len(data[data['classification_polarity'] == 'negative'])
+
+    print(pos, neg)
 
 
 if __name__ == "__main__":
