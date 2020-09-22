@@ -5,23 +5,17 @@ Author:     FDS Group 48
 Date:       September 2020
 """
 
-import sys
 import argparse
 import pickle
-import os
-import tarfile
-import json
 import pandas as pd
 import nltk
 from nltk.corpus import stopwords
-import random
-import re
-
-import os
 import tarfile
 import json
-import numpy as np
 from geopy.geocoders import Nominatim
+
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
 def parse_arguments():
