@@ -183,7 +183,7 @@ def train(file_name):
     print("Training Classifier:", end=" ")
     model = nltk.NaiveBayesClassifier.train(training_set)
     save_pickle_file(model, file_name)
-    print("Done\n")
+    print("Done")
 
     # Test Classifier
     model.show_most_informative_features()
@@ -214,7 +214,7 @@ def classify_tweets(file_name, data_file):
         # Efficient way of loading json to panda:
         # https://medium.com/@ram.parameswaran22/a-relatively-faster-approach-for-reading-json-lines-file-into-pandas-dataframe-90b57353fd38
         lines = f.read().splitlines()
-        df_inter = pd.DataFrame(lines[:10])
+        df_inter = pd.DataFrame(lines[:1000])
         df_inter.columns = ['json_element']
         df_inter['json_element'].apply(json.loads)
         data = pd.json_normalize(df_inter['json_element'].apply(json.loads))
@@ -249,6 +249,8 @@ def classify_tweets(file_name, data_file):
         # See if either trum or clinton mentioned in hash or tags
         data['Trump'] = data['tags_hash'].str.contains(r'trump|maga', na=False)
         data['Clinton'] = data['tags_hash'].str.contains(r'clinton|imwithher|hillary', na=False)
+        data = data[(not((data['Trump'] == 'True') & (data['Clinton'] == 'True')) |
+                        ((data['Trump'] == 'False') & (data['Clinton'] == 'False')))]
 
         # Filter bots (hyperlinks in text)
         # Removing dubious sources:
