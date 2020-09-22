@@ -229,7 +229,7 @@ def classify_tweets(file_name, data_file):
 
         print("Cleaning dataset:", end=" ")
         # Only included wanted columns
-        data = data[['id', 'text', 'source', 'place.country_code', 'coordinates',
+        data = data[['id', 'text', 'source', 'place.country_code', 'place.bounding_box.coordinates', 'coordinates',
                      'lang', 'user.followers_count', 'user.friends_count']]
         #print('\n', list(data))  # Column titles
 
@@ -238,7 +238,11 @@ def classify_tweets(file_name, data_file):
         data = data[data['lang'] == 'en']
 
         # Get states
-        #data['coordinates'] = data['place.longitude'].astype(str) + ", " + data['place.latitude'].astype(str)
+        pd.set_option('display.max_columns', None)
+        data['latitude'] = data['place.bounding_box.coordinates'].apply(lambda x: x[0][0][0])
+        data['longitude'] = data['place.bounding_box.coordinates'].apply(lambda x: x[0][0][1])
+        data['coordinates'] = data['longitude'].astype(str) + ", " + data['latitude'].astype(str)
+        #print(data.head())
         data['state'] = data['coordinates'].apply(city_state_country)
 
         # Determine tags and hashs (some tweets dont have tags only hash)
@@ -282,16 +286,84 @@ def classify_tweets(file_name, data_file):
     # Apply classifier to column
     model = load_pickle(file_name)
     data['classification_polarity'] = data['text'].apply(lambda x: model.classify((extract_features(file_name, x))))
-
+    save_pickle_file(data, "twitter_data_classified")
     print("Done")
-    print("Columns", list(data))  # Column titles
+    #print("Columns", list(data))  # Column titles
     #print(data.head())
 
-    # Get data per state
-    pos = len(data[data['classification_polarity'] == 'positive'])
-    neg = len(data[data['classification_polarity'] == 'negative'])
+    # Get data per state and save to CSV
+    print("Save data per state to CSV:", end=" ")
+    states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
+              'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
+              'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
+              'Maine' 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
+              'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada',
+              'New Hampshire', 'New Jersey', 'New Mexico', 'New York',
+              'North Carolina', 'North Dakota', 'Ohio',
+              'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island',
+              'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah',
+              'Vermont', 'Virginia', 'Washington', 'West Virginia',
+              'Wisconsin', 'Wyoming']
 
-    print(pos, neg)
+    with open('sentiment_polarity_states.csv', 'w') as f:
+        f.write("state,"
+                "trump_pos, trump_neg, trump_ratio,"
+                "clinton_pos, clinton_neg, clinton_ratio,"
+                "total_pos, total_neg, total_ratio")
+        for state in states:
+            trump_pos = len(data[(data['classification_polarity'] == 'positive') &
+                                 (data['Trump'] == 'True') &
+                                 (data['state'].str.lower() == state.lower())])
+            trump_neg = len(data[(data['classification_polarity'] == 'negative') &
+                                 (data['Trump'] == 'True') &
+                                 (data['state'].str.lower() == state.lower())])
+            trump_ratio = trump_pos / (trump_pos + trump_neg)
+            clinton_pos = len(data[(data['classification_polarity'] == 'positive') &
+                                   (data['Clinton'] == 'True') &
+                                   (data['state'].str.lower() == state.lower())])
+            clinton_neg = len(data[(data['classification_polarity'] == 'negative') &
+                                   (data['Clinton'] == 'True') &
+                                   (data['state'].str.lower() == state.lower())])
+            clinton_ratio = clinton_pos / (clinton_pos + clinton_neg)
+            total_pos = len(data[(data['classification_polarity'] == 'positive') &
+                                 (data['state'].str.lower() == state.lower())])
+            total_neg = len(data[(data['classification_polarity'] == 'negative') &
+                                 (data['state'].str.lower() == state.lower())])
+            total_ratio = total_pos / (total_pos + total_neg)
+            f.write("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}".format(state,
+                                                                              trump_pos,
+                                                                              trump_neg,
+                                                                              trump_ratio,
+                                                                              clinton_pos,
+                                                                              clinton_neg,
+                                                                              clinton_ratio,
+                                                                              total_pos,
+                                                                              total_neg,
+                                                                              total_ratio))
+        trump_pos = len(data[(data['classification_polarity'] == 'positive') &
+                             (data['Trump'] == 'True')])
+        trump_neg = len(data[(data['classification_polarity'] == 'negative') &
+                             (data['Trump'] == 'True')])
+        trump_ratio = trump_pos / (trump_pos + trump_neg)
+        clinton_pos = len(data[(data['classification_polarity'] == 'positive') &
+                               (data['Clinton'] == 'True')])
+        clinton_neg = len(data[(data['classification_polarity'] == 'negative') &
+                               (data['Clinton'] == 'True')])
+        clinton_ratio = clinton_pos / (clinton_pos + clinton_neg)
+        total_pos = len(data[data['classification_polarity'] == 'positive'])
+        total_neg = len(data[data['classification_polarity'] == 'negative'])
+        total_ratio = total_pos / (total_pos + total_neg)
+        f.write("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}".format("total",
+                                                                          trump_pos,
+                                                                          trump_neg,
+                                                                          trump_ratio,
+                                                                          clinton_pos,
+                                                                          clinton_neg,
+                                                                          clinton_ratio,
+                                                                          total_pos,
+                                                                          total_neg,
+                                                                          total_ratio))
+    print("Done")
 
 
 if __name__ == "__main__":
