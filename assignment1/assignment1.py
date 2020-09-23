@@ -6,6 +6,7 @@ Date:       September 2020
 """
 
 import argparse
+import os.path
 import pickle
 import pandas as pd
 import nltk
@@ -154,31 +155,39 @@ def train(file_name):
     """
     # Loading training dataset
     print("Loading dataset:", end=" ")
-    data_set = pd.read_csv("training.1600000.processed.noemoticon.csv",
-                           encoding='latin-1',
-                           names=["Polarity", "Tweet ID", "Date", "Query", "User", "text"])
-    print("Done")
 
-    # Pre-Process Data
-    print("Pre-Processing data:", end=" ")
-    data_set = data_set.sample(n = 1111111)  # Select random sample of size n (1,111,111 so training set is 1 million)
-    data_set = clean_data(data_set)  # Data cleaning
+    if os.path.isfile('tweets_and_polarity_' + file_name):
+        data_set = pd.read_csv("training.1600000.processed.noemoticon.csv",
+                               encoding='latin-1',
+                               names=["Polarity", "Tweet ID", "Date", "Query", "User", "text"])
+        print("Done")
 
-    # Create data that puts tweet texts together with sentiment score
-    tweets_and_polarity = []
-    for i in range(0, len(data_set)):
-        if data_set["Polarity"].iloc[i] == 0 or data_set["Polarity"].iloc[i] == 4:
-            if data_set["Polarity"].iloc[i] == 0:
-                tweet_polarity = "negative"
-            else:
-                tweet_polarity = "positive"
-            tweets_and_polarity.append((data_set['text'].iloc[i], tweet_polarity))
-    print("Done")
+        # Pre-Process Data
+        print("Pre-Processing data:", end=" ")
+        data_set = data_set.sample(n = 1111111)  # Select random sample of size n (1,111,111 so training set is 1 million)
+        data_set = clean_data(data_set)  # Data cleaning
 
-    # Feature extraction
-    print("Feature extraction:", end=" ")
-    word_features = get_word_features(get_words_in_tweets(tweets_and_polarity))
-    save_pickle_file(word_features, "word_features_" + file_name)
+        # Create data that puts tweet texts together with sentiment score
+        tweets_and_polarity = []
+        for i in range(0, len(data_set)):
+            if data_set["Polarity"].iloc[i] == 0 or data_set["Polarity"].iloc[i] == 4:
+                if data_set["Polarity"].iloc[i] == 0:
+                    tweet_polarity = "negative"
+                else:
+                    tweet_polarity = "positive"
+                tweets_and_polarity.append((data_set['text'].iloc[i], tweet_polarity))
+        print("Done")
+
+        # Feature extraction
+        print("Feature extraction:", end=" ")
+        word_features = get_word_features(get_words_in_tweets(tweets_and_polarity))
+        save_pickle_file(word_features, "word_features_" + file_name)
+        save_pickle_file(tweets_and_polarity, "tweets_and_polarity_" + file_name)
+
+    else:
+        tweets_and_polarity = load_pickle("tweets_and_polarity_" + file_name)
+        print("Done")
+
     final_data_set = [(extract_features(file_name, tweet), pol_score) for (tweet, pol_score) in tweets_and_polarity]
 
     # Split training and test set
