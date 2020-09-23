@@ -1,9 +1,9 @@
 state,trump_pos,trump_neg,trump_ratio,clinton_pos,clinton_neg,clinton_ratio,total_pos,total_neg,total_ratio
 Alabama,0,0,0,0,0,0,0,0,0
 Alaska,0,0,0,0,0,0,0,0,0
-Arizona,0,0,0,0,0,0,1,1,0.5
+Arizona,0,0,0,0,0,0,0,2,0.0
 Arkansas,0,0,0,0,0,0,0,0,0
-California,0,0,0,0,0,0,2,1,0.6666666666666666
+California,0,0,0,0,0,0,1,2,0.3333333333333333
 Colorado,0,0,0,0,0,0,0,0,0
 Connecticut,0,0,0,0,0,0,0,0,0
 Delaware,0,0,0,0,0,0,1,0,1.0
@@ -19,7 +19,7 @@ Kentucky,0,0,0,0,0,0,0,0,0
 Louisiana,0,0,0,0,0,0,1,1,0.5
 MaineMaryland,0,0,0,0,0,0,0,0,0
 Massachusetts,0,0,0,0,0,0,1,0,1.0
-Michigan,0,0,0,0,0,0,0,2,0.0
+Michigan,0,0,0,0,0,0,1,1,0.5
 Minnesota,0,0,0,0,0,0,0,0,0
 Mississippi,0,0,0,0,0,0,1,0,1.0
 Missouri,0,0,0,0,0,0,2,0,1.0
@@ -35,17 +35,17 @@ North Dakota,0,0,0,0,0,0,0,0,0
 Ohio,0,0,0,0,0,0,0,0,0
 Oklahoma,0,0,0,0,0,0,1,0,1.0
 Oregon,0,0,0,0,0,0,1,0,1.0
-Pennsylvania,0,0,0,0,0,0,0,1,0.0
+Pennsylvania,0,0,0,0,0,0,1,0,1.0
 Rhode Island,0,0,0,0,0,0,0,0,0
 South Carolina,0,0,0,0,0,0,0,0,0
 South Dakota,0,0,0,0,0,0,0,0,0
 Tennessee,0,0,0,0,0,0,0,0,0
-Texas,0,0,0,0,0,0,3,1,0.75
+Texas,0,0,0,0,0,0,0,4,0.0
 Utah,0,0,0,0,0,0,0,0,0
 Vermont,0,0,0,0,0,0,0,0,0
-Virginia,0,0,0,0,0,0,0,1,0.0
+Virginia,0,0,0,0,0,0,1,0,1.0
 Washington,0,0,0,0,0,0,0,0,0
-West Virginia,0,0,0,0,0,0,2,4,0.3333333333333333
+West Virginia,0,0,0,0,0,0,3,3,0.5
 Wisconsin,0,0,0,0,0,0,0,0,0
 Wyoming,0,0,0,0,0,0,0,0,0
-Total,0,0,0,0,0,0,19,15,0.5588235294117647
+Total,0,0,0,0,0,0,18,16,0.5294117647058824

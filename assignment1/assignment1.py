@@ -161,7 +161,7 @@ def train(file_name):
 
     # Pre-Process Data
     print("Pre-Processing data:", end=" ")
-    data_set = data_set.sample(n = 10000)  # Select random sample - otherwise the classifier will be too slow
+    data_set = data_set.sample(n = 10000)  # Select random sample of size n
     data_set = clean_data(data_set)  # Data cleaning
 
     # Create data that puts tweet texts together with sentiment score
@@ -226,12 +226,13 @@ def classify_tweets(file_name, data_file):
         df_inter['json_element'].apply(json.loads)
         data = pd.json_normalize(df_inter['json_element'].apply(json.loads))
         print("Done")
-        #print(list(data))  # Column titles
+        print(list(data))  # Column titles
 
         print("Cleaning dataset:", end=" ")
         # Only included wanted columns
-        data = data[['id', 'text', 'source', 'place.country_code', 'place.bounding_box.coordinates', 'coordinates',
-                     'lang', 'user.followers_count', 'user.friends_count']]
+        data = data[['id', 'text', 'created_at', 'source', 'lang',
+                     'place.country_code', 'place.bounding_box.coordinates', 'coordinates',
+                     'user.followers_count', 'user.friends_count']]
         #print('\n', list(data))  # Column titles
 
         # Exclude tweets outside of US (location) - filter on country code US (Country where tweet is posted)
