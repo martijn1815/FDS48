@@ -155,8 +155,7 @@ def train(file_name):
     """
     # Loading training dataset
     print("Loading dataset:", end=" ")
-
-    if os.path.isfile('tweets_and_polarity_' + file_name):
+    if not os.path.isfile('tweets_and_polarity_' + file_name + '.pickle'):
         data_set = pd.read_csv("training.1600000.processed.noemoticon.csv",
                                encoding='latin-1',
                                names=["Polarity", "Tweet ID", "Date", "Query", "User", "text"])
