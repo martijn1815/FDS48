@@ -161,7 +161,7 @@ def train(file_name):
 
     # Pre-Process Data
     print("Pre-Processing data:", end=" ")
-    data_set = data_set.sample(n = 10000)  # Select random sample of size n
+    data_set = data_set.sample(n = 1111111)  # Select random sample of size n (1,111,111 so training set is 1 million)
     data_set = clean_data(data_set)  # Data cleaning
 
     # Create data that puts tweet texts together with sentiment score
@@ -178,7 +178,7 @@ def train(file_name):
     # Feature extraction
     print("Feature extraction:", end=" ")
     word_features = get_word_features(get_words_in_tweets(tweets_and_polarity))
-    save_pickle_file(word_features, file_name + "_word_features")
+    save_pickle_file(word_features, "word_features_" + file_name)
     final_data_set = [(extract_features(file_name, tweet), pol_score) for (tweet, pol_score) in tweets_and_polarity]
 
     # Split training and test set
