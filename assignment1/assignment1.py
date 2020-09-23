@@ -186,16 +186,17 @@ def train(file_name):
     else:
         tweets_and_polarity = load_pickle("tweets_and_polarity_" + file_name)
         print("Done")
+        print("Feature extraction:", end=" ")
 
     final_data_set = [(extract_features(file_name, tweet), pol_score) for (tweet, pol_score) in tweets_and_polarity]
-
-    # Split training and test set
-    training_set = final_data_set[int(len(final_data_set) / 10):]
-    test_set = final_data_set[:int(len(final_data_set) / 10)]
     print("Done")
 
-    # Train and Save Classifier
+    # Split training and test set
     print("Training Classifier:", end=" ")
+    training_set = final_data_set[int(len(final_data_set) / 10):]
+    test_set = final_data_set[:int(len(final_data_set) / 10)]
+
+    # Train and Save Classifier
     model = nltk.NaiveBayesClassifier.train(training_set)
     save_pickle_file(model, file_name)
     print("Done")
