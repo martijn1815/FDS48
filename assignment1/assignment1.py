@@ -13,6 +13,7 @@ from nltk.corpus import stopwords
 import tarfile
 import json
 from geopy.geocoders import Nominatim
+from nltk.stem.wordnet import WordNetLemmatizer
 
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -76,6 +77,11 @@ def load_pickle(file_name):
     return data
 
 
+def lemmatize_text(text):
+    lemmatizer = WordNetLemmatizer()
+    return [lemmatizer.lemmatize(w) for w in text]
+
+
 def clean_data(data_set):
     """
     Data cleaning - removing punctuation from text; removing tags; removing links
@@ -92,6 +98,7 @@ def clean_data(data_set):
 
     data_set['text'] = data_set['text'].str.lower().str.split()  # lower and split the text
     data_set['text'] = data_set['text'].apply(lambda x: [item for item in x if item not in stopword_list])  # remove stopwords
+    data_set['text'] = data_set['text'].apply(lemmatize_text)  # Lemmatize text
 
     return data_set
 
@@ -214,7 +221,7 @@ def classify_tweets(file_name, data_file):
         # Efficient way of loading json to panda:
         # https://medium.com/@ram.parameswaran22/a-relatively-faster-approach-for-reading-json-lines-file-into-pandas-dataframe-90b57353fd38
         lines = f.read().splitlines()
-        df_inter = pd.DataFrame(lines[:1000])
+        df_inter = pd.DataFrame(lines[:100])
         df_inter.columns = ['json_element']
         df_inter['json_element'].apply(json.loads)
         data = pd.json_normalize(df_inter['json_element'].apply(json.loads))
@@ -249,8 +256,7 @@ def classify_tweets(file_name, data_file):
         # See if either trum or clinton mentioned in hash or tags
         data['Trump'] = data['tags_hash'].str.contains(r'trump|maga', na=False)
         data['Clinton'] = data['tags_hash'].str.contains(r'clinton|imwithher|hillary', na=False)
-        data = data[(not((data['Trump'] == 'True') & (data['Clinton'] == 'True')) |
-                        ((data['Trump'] == 'False') & (data['Clinton'] == 'False')))]
+        data = data[(data['Trump'] != data['Clinton'])]
 
         # Filter bots (hyperlinks in text)
         # Removing dubious sources:
@@ -301,6 +307,13 @@ def classify_tweets(file_name, data_file):
               'Vermont', 'Virginia', 'Washington', 'West Virginia',
               'Wisconsin', 'Wyoming']
 
+    total_trump_pos = 0
+    total_trump_neg = 0
+    total_clinton_pos = 0
+    total_clinton_neg = 0
+    total_total_pos = 0
+    total_total_neg = 0
+
     with open('sentiment_polarity_states.csv', 'w') as f:
         f.write("state,"
                 "trump_pos,trump_neg,trump_ratio,"
@@ -310,21 +323,27 @@ def classify_tweets(file_name, data_file):
             trump_pos = len(data[(data['classification_polarity'] == 'positive') &
                                  (data['Trump'] == 'True') &
                                  (data['state'].str.lower() == state.lower())])
+            total_trump_pos += trump_pos
             trump_neg = len(data[(data['classification_polarity'] == 'negative') &
                                  (data['Trump'] == 'True') &
                                  (data['state'].str.lower() == state.lower())])
+            total_trump_neg += trump_neg
             trump_ratio = 0 if (trump_pos + trump_neg) == 0 else trump_pos / (trump_pos + trump_neg)
             clinton_pos = len(data[(data['classification_polarity'] == 'positive') &
                                    (data['Clinton'] == 'True') &
                                    (data['state'].str.lower() == state.lower())])
+            total_clinton_pos += clinton_pos
             clinton_neg = len(data[(data['classification_polarity'] == 'negative') &
                                    (data['Clinton'] == 'True') &
                                    (data['state'].str.lower() == state.lower())])
+            total_clinton_neg += clinton_neg
             clinton_ratio =  0 if (clinton_pos + clinton_neg) == 0 else clinton_pos / (clinton_pos + clinton_neg)
             total_pos = len(data[(data['classification_polarity'] == 'positive') &
                                  (data['state'].str.lower() == state.lower())])
+            total_total_pos += total_pos
             total_neg = len(data[(data['classification_polarity'] == 'negative') &
                                  (data['state'].str.lower() == state.lower())])
+            total_total_neg += total_neg
             total_ratio = 0 if (total_pos + total_neg) == 0 else total_pos / (total_pos + total_neg)
             f.write("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9}\n".format(state,
                                                                        trump_pos,
@@ -336,29 +355,19 @@ def classify_tweets(file_name, data_file):
                                                                        total_pos,
                                                                        total_neg,
                                                                        total_ratio))
-        trump_pos = len(data[(data['classification_polarity'] == 'positive') &
-                             (data['Trump'] == 'True')])
-        trump_neg = len(data[(data['classification_polarity'] == 'negative') &
-                             (data['Trump'] == 'True')])
-        trump_ratio =  0 if (trump_pos + trump_neg) == 0 else trump_pos / (trump_pos + trump_neg)
-        clinton_pos = len(data[(data['classification_polarity'] == 'positive') &
-                               (data['Clinton'] == 'True')])
-        clinton_neg = len(data[(data['classification_polarity'] == 'negative') &
-                               (data['Clinton'] == 'True')])
-        clinton_ratio =  0 if (clinton_pos + clinton_neg) == 0 else clinton_pos / (clinton_pos + clinton_neg)
-        total_pos = len(data[data['classification_polarity'] == 'positive'])
-        total_neg = len(data[data['classification_polarity'] == 'negative'])
-        total_ratio =  0 if (total_pos + total_neg) == 0 else total_pos / (total_pos + total_neg)
+        total_trump_ratio =  0 if (total_trump_pos + total_trump_neg) == 0 else total_trump_pos / (total_trump_pos + total_trump_neg)
+        total_clinton_ratio =  0 if (total_clinton_pos + total_clinton_neg) == 0 else total_clinton_pos / (total_clinton_pos + total_clinton_neg)
+        total_total_ratio =  0 if (total_total_pos + total_total_neg) == 0 else total_total_pos / (total_total_pos + total_total_neg)
         f.write("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9}".format("Total",
-                                                                 trump_pos,
-                                                                 trump_neg,
-                                                                 trump_ratio,
-                                                                 clinton_pos,
-                                                                 clinton_neg,
-                                                                 clinton_ratio,
-                                                                 total_pos,
-                                                                 total_neg,
-                                                                 total_ratio))
+                                                                 total_trump_pos,
+                                                                 total_trump_neg,
+                                                                 total_trump_ratio,
+                                                                 total_clinton_pos,
+                                                                 total_clinton_neg,
+                                                                 total_clinton_ratio,
+                                                                 total_total_pos,
+                                                                 total_total_neg,
+                                                                 total_total_ratio))
     print("Done")
 
 
