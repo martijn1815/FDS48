@@ -247,7 +247,7 @@ def state_csv(data):
     states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
               'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
               'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
-              'Maine' 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
+              'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
               'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada',
               'New Hampshire', 'New Jersey', 'New Mexico', 'New York',
               'North Carolina', 'North Dakota', 'Ohio',
@@ -263,7 +263,7 @@ def state_csv(data):
     total_total_pos = 0
     total_total_neg = 0
 
-    with open('sentiment_polarity_states.csv', 'w') as f:
+    with open('sentiment_polarity_states_23k.csv', 'w') as f:
         f.write("state,"
                 "trump_pos,trump_neg,trump_ratio,"
                 "clinton_pos,clinton_neg,clinton_ratio,"
