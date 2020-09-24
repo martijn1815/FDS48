@@ -1,0 +1,9 @@
+"","Individuals with Some College","Individuals with No College","Individuals not in Labor Force","Individuals Employed","Individuals Unemployed","Trump Positive Tweet Ratio","Clinton Positive Tweet Ratio","Total Positive Tweet Ratio"
+"Individuals with Some College",1,-1,-0.69,0.68,-0.06,-0.06,-0.12,-0.09
+"Individuals with No College",-1,1,0.69,-0.68,0.06,0.06,0.12,0.09
+"Individuals not in Labor Force",-0.69,0.69,1,-0.98,0.05,-0.03,0,-0.05
+"Individuals Employed",0.68,-0.68,-0.98,1,-0.25,0.02,0.06,0.06
+"Individuals Unemployed",-0.06,0.06,0.05,-0.25,1,0.02,-0.29,-0.06
+"Trump Positive Tweet Ratio",-0.06,0.06,-0.03,0.02,0.02,1,0.62,0.94
+"Clinton Positive Tweet Ratio",-0.12,0.12,0,0.06,-0.29,0.62,1,0.8
+"Total Positive Tweet Ratio",-0.09,0.09,-0.05,0.06,-0.06,0.94,0.8,1
