@@ -263,28 +263,27 @@ def state_csv(data):
     total_total_pos = 0
     total_total_neg = 0
 
-    with open('sentiment_polarity_states_23k.csv', 'w') as f:
+    with open('sentiment_polarity_states.csv', 'w') as f:
         f.write("state,"
                 "trump_pos,trump_neg,trump_ratio,"
                 "clinton_pos,clinton_neg,clinton_ratio,"
                 "total_pos,total_neg,total_ratio\n")
         for state in states:
-            print(data[(data['state'].str.lower() == state.lower())].head())
             trump_pos = len(data[(data['classification_polarity'] == 'positive') &
-                                 (data['Trump'] == 'True') &
+                                 (data['Trump'] == True) &
                                  (data['state'].str.lower() == state.lower())])
             total_trump_pos += trump_pos
             trump_neg = len(data[(data['classification_polarity'] == 'negative') &
-                                 (data['Trump'] == 'True') &
+                                 (data['Trump'] == True) &
                                  (data['state'].str.lower() == state.lower())])
             total_trump_neg += trump_neg
             trump_ratio = 0 if (trump_pos + trump_neg) == 0 else trump_pos / (trump_pos + trump_neg)
             clinton_pos = len(data[(data['classification_polarity'] == 'positive') &
-                                   (data['Clinton'] == 'True') &
+                                   (data['Clinton'] == True) &
                                    (data['state'].str.lower() == state.lower())])
             total_clinton_pos += clinton_pos
             clinton_neg = len(data[(data['classification_polarity'] == 'negative') &
-                                   (data['Clinton'] == 'True') &
+                                   (data['Clinton'] == True) &
                                    (data['state'].str.lower() == state.lower())])
             total_clinton_neg += clinton_neg
             clinton_ratio = 0 if (clinton_pos + clinton_neg) == 0 else clinton_pos / (clinton_pos + clinton_neg)
