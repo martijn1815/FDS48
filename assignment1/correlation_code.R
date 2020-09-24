@@ -18,6 +18,12 @@ sub_merged_proportions <- select(merged_proportions, Proportion.Some.College, Pr
                                  Proportion.Not.In.Labor.Force, Proportion.Employed, Proportion.Unemployed,
                                  trump_ratio, clinton_ratio, total_ratio)
 
+colnames(sub_merged_proportions) <- c("Individuals with Some College", "Individuals with No College", "Individuals not in Labor Force",
+                                      "Individuals Employed", "Individuals Unemployed", "Trump Positive Tweet Ratio", "Clinton Negative 
+                                      Tweet Ratio", "Total Positive Tweet Ratio")
+
+View(sub_merged_proportions)
+
 cor_mat <- cor(sub_merged_proportions)
 cor_mat <- round(cor_mat, 2)
 write.table(cor_mat, file="correlation_matrix.txt")
