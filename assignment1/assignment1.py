@@ -241,6 +241,7 @@ def test(file_name):
 
 
 def state_csv(data):
+    pd.set_option('display.max_columns', None)
     # Get data per state and save to CSV
     print("Save data per state to CSV:", end=" ")
     states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
@@ -268,6 +269,7 @@ def state_csv(data):
                 "clinton_pos,clinton_neg,clinton_ratio,"
                 "total_pos,total_neg,total_ratio\n")
         for state in states:
+            print(data[(data['state'].str.lower() == state.lower())].head())
             trump_pos = len(data[(data['classification_polarity'] == 'positive') &
                                  (data['Trump'] == 'True') &
                                  (data['state'].str.lower() == state.lower())])
