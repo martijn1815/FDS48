@@ -324,7 +324,7 @@ def classify_tweets(file_name, data_file):
             print(len(data))
 
         # Get states
-        data = data.sample(n=30000)
+        data = data.sample(n=10000)
         # pd.set_option('display.max_columns', None)
         data['latitude'] = data['place.bounding_box.coordinates'].apply(lambda x: x[0][0][0])
         data['longitude'] = data['place.bounding_box.coordinates'].apply(lambda x: x[0][0][1])
@@ -341,8 +341,11 @@ def classify_tweets(file_name, data_file):
         print("Loading dataset:", end=" ")
         data = load_pickle(data_file)
         print("Done")
+        print("Size dataset:", len(data))
 
+    data = data.sample(n=10000)
     print("Size dataset:", len(data))
+    print("Size dataset:", len(data['user_id']))
     #print("Columns", list(data))  # Column titles
 
     # Pre-Process Data
