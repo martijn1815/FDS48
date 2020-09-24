@@ -45,6 +45,10 @@ def parse_arguments():
                         metavar="CLASSIFIER",
                         help="Run sentiment classification on twitter data with cleaned data, "
                              "provide trained classifier (pickle file)")
+    parser.add_argument("-make_csv",
+                        metavar="CLASSIFIER",
+                        help="Make CSV file with state info, "
+                             "provide classified data (pickle file)")
     args = parser.parse_args()
 
     # test compatibility of parameters
@@ -236,6 +240,88 @@ def test(file_name):
     print(model.classify(extract_features(file_name, tweet_positive.split())))
 
 
+def state_csv(data):
+    # Get data per state and save to CSV
+    print("Save data per state to CSV:", end=" ")
+    states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
+              'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
+              'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
+              'Maine' 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
+              'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada',
+              'New Hampshire', 'New Jersey', 'New Mexico', 'New York',
+              'North Carolina', 'North Dakota', 'Ohio',
+              'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island',
+              'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah',
+              'Vermont', 'Virginia', 'Washington', 'West Virginia',
+              'Wisconsin', 'Wyoming']
+
+    total_trump_pos = 0
+    total_trump_neg = 0
+    total_clinton_pos = 0
+    total_clinton_neg = 0
+    total_total_pos = 0
+    total_total_neg = 0
+
+    with open('sentiment_polarity_states_23k.csv', 'w') as f:
+        f.write("state,"
+                "trump_pos,trump_neg,trump_ratio,"
+                "clinton_pos,clinton_neg,clinton_ratio,"
+                "total_pos,total_neg,total_ratio\n")
+        for state in states:
+            trump_pos = len(data[(data['classification_polarity'] == 'positive') &
+                                 (data['Trump'] == 'True') &
+                                 (data['state'].str.lower() == state.lower())])
+            total_trump_pos += trump_pos
+            trump_neg = len(data[(data['classification_polarity'] == 'negative') &
+                                 (data['Trump'] == 'True') &
+                                 (data['state'].str.lower() == state.lower())])
+            total_trump_neg += trump_neg
+            trump_ratio = 0 if (trump_pos + trump_neg) == 0 else trump_pos / (trump_pos + trump_neg)
+            clinton_pos = len(data[(data['classification_polarity'] == 'positive') &
+                                   (data['Clinton'] == 'True') &
+                                   (data['state'].str.lower() == state.lower())])
+            total_clinton_pos += clinton_pos
+            clinton_neg = len(data[(data['classification_polarity'] == 'negative') &
+                                   (data['Clinton'] == 'True') &
+                                   (data['state'].str.lower() == state.lower())])
+            total_clinton_neg += clinton_neg
+            clinton_ratio = 0 if (clinton_pos + clinton_neg) == 0 else clinton_pos / (clinton_pos + clinton_neg)
+            total_pos = len(data[(data['classification_polarity'] == 'positive') &
+                                 (data['state'].str.lower() == state.lower())])
+            total_total_pos += total_pos
+            total_neg = len(data[(data['classification_polarity'] == 'negative') &
+                                 (data['state'].str.lower() == state.lower())])
+            total_total_neg += total_neg
+            total_ratio = 0 if (total_pos + total_neg) == 0 else total_pos / (total_pos + total_neg)
+            f.write("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9}\n".format(state,
+                                                                       trump_pos,
+                                                                       trump_neg,
+                                                                       trump_ratio,
+                                                                       clinton_pos,
+                                                                       clinton_neg,
+                                                                       clinton_ratio,
+                                                                       total_pos,
+                                                                       total_neg,
+                                                                       total_ratio))
+        total_trump_ratio = 0 if (total_trump_pos + total_trump_neg) == 0 else total_trump_pos / (
+                    total_trump_pos + total_trump_neg)
+        total_clinton_ratio = 0 if (total_clinton_pos + total_clinton_neg) == 0 else total_clinton_pos / (
+                    total_clinton_pos + total_clinton_neg)
+        total_total_ratio = 0 if (total_total_pos + total_total_neg) == 0 else total_total_pos / (
+                    total_total_pos + total_total_neg)
+        f.write("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9}".format("Total",
+                                                                 total_trump_pos,
+                                                                 total_trump_neg,
+                                                                 total_trump_ratio,
+                                                                 total_clinton_pos,
+                                                                 total_clinton_neg,
+                                                                 total_clinton_ratio,
+                                                                 total_total_pos,
+                                                                 total_total_neg,
+                                                                 total_total_ratio))
+    print("Done")
+
+
 def classify_tweets(file_name, data_file):
     if not data_file:
         # Load Data
@@ -343,7 +429,7 @@ def classify_tweets(file_name, data_file):
         print("Done")
         print("Size dataset:", len(data))
 
-    data = data.sample(n=10000)
+    #data = data.sample(n=10000)
     print("Size dataset:", len(data))
     print("Size dataset:", len(data['user_id']))
     #print("Columns", list(data))  # Column titles
@@ -355,87 +441,17 @@ def classify_tweets(file_name, data_file):
     # Apply classifier to column
     model = load_pickle(file_name)
     data['classification_polarity'] = data['text_formatted'].apply(lambda x: model.classify((extract_features(file_name, x))))
-    save_pickle_file(data, "twitter_data_classified")
+    save_pickle_file(data, "twitter_data_classified_23k")
     print("Done")
     #print("Columns", list(data))  # Column titles
     #print(data.head())
 
-    # Get data per state and save to CSV
-    print("Save data per state to CSV:", end=" ")
-    states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
-              'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
-              'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
-              'Maine' 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
-              'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada',
-              'New Hampshire', 'New Jersey', 'New Mexico', 'New York',
-              'North Carolina', 'North Dakota', 'Ohio',
-              'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island',
-              'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah',
-              'Vermont', 'Virginia', 'Washington', 'West Virginia',
-              'Wisconsin', 'Wyoming']
+    state_csv(data)
 
-    total_trump_pos = 0
-    total_trump_neg = 0
-    total_clinton_pos = 0
-    total_clinton_neg = 0
-    total_total_pos = 0
-    total_total_neg = 0
 
-    with open('sentiment_polarity_states.csv', 'w') as f:
-        f.write("state,"
-                "trump_pos,trump_neg,trump_ratio,"
-                "clinton_pos,clinton_neg,clinton_ratio,"
-                "total_pos,total_neg,total_ratio\n")
-        for state in states:
-            trump_pos = len(data[(data['classification_polarity'] == 'positive') &
-                                 (data['Trump'] == 'True') &
-                                 (data['state'].str.lower() == state.lower())])
-            total_trump_pos += trump_pos
-            trump_neg = len(data[(data['classification_polarity'] == 'negative') &
-                                 (data['Trump'] == 'True') &
-                                 (data['state'].str.lower() == state.lower())])
-            total_trump_neg += trump_neg
-            trump_ratio = 0 if (trump_pos + trump_neg) == 0 else trump_pos / (trump_pos + trump_neg)
-            clinton_pos = len(data[(data['classification_polarity'] == 'positive') &
-                                   (data['Clinton'] == 'True') &
-                                   (data['state'].str.lower() == state.lower())])
-            total_clinton_pos += clinton_pos
-            clinton_neg = len(data[(data['classification_polarity'] == 'negative') &
-                                   (data['Clinton'] == 'True') &
-                                   (data['state'].str.lower() == state.lower())])
-            total_clinton_neg += clinton_neg
-            clinton_ratio =  0 if (clinton_pos + clinton_neg) == 0 else clinton_pos / (clinton_pos + clinton_neg)
-            total_pos = len(data[(data['classification_polarity'] == 'positive') &
-                                 (data['state'].str.lower() == state.lower())])
-            total_total_pos += total_pos
-            total_neg = len(data[(data['classification_polarity'] == 'negative') &
-                                 (data['state'].str.lower() == state.lower())])
-            total_total_neg += total_neg
-            total_ratio = 0 if (total_pos + total_neg) == 0 else total_pos / (total_pos + total_neg)
-            f.write("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9}\n".format(state,
-                                                                       trump_pos,
-                                                                       trump_neg,
-                                                                       trump_ratio,
-                                                                       clinton_pos,
-                                                                       clinton_neg,
-                                                                       clinton_ratio,
-                                                                       total_pos,
-                                                                       total_neg,
-                                                                       total_ratio))
-        total_trump_ratio =  0 if (total_trump_pos + total_trump_neg) == 0 else total_trump_pos / (total_trump_pos + total_trump_neg)
-        total_clinton_ratio =  0 if (total_clinton_pos + total_clinton_neg) == 0 else total_clinton_pos / (total_clinton_pos + total_clinton_neg)
-        total_total_ratio =  0 if (total_total_pos + total_total_neg) == 0 else total_total_pos / (total_total_pos + total_total_neg)
-        f.write("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9}".format("Total",
-                                                                 total_trump_pos,
-                                                                 total_trump_neg,
-                                                                 total_trump_ratio,
-                                                                 total_clinton_pos,
-                                                                 total_clinton_neg,
-                                                                 total_clinton_ratio,
-                                                                 total_total_pos,
-                                                                 total_total_neg,
-                                                                 total_total_ratio))
-    print("Done")
+def make_new_csv(file):
+    data = load_pickle(file)
+    state_csv(data)
 
 
 if __name__ == "__main__":
@@ -449,5 +465,7 @@ if __name__ == "__main__":
             classify_tweets(args.run, args.data)
         else:
             classify_tweets(args.run, None)
+    elif args.make_csv:
+        make_new_csv(args.make_csv)
     else:
         print("No parameters given. Use '-h' for help.")
